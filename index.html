@@ -486,6 +486,7 @@ CASE slut -->
 <div class="field"><label for="f-telefon">Telefon <span class="opt">(valfritt)</span></label><input id="f-telefon" name="telefon" type="tel" autocomplete="tel"><span class="err" id="e-telefon"></span></div>
 <div class="field full"><label for="f-vad">Vad vill ni automatisera?</label><textarea id="f-vad" name="vad" required placeholder="Till exempel uppföljning av leads, svar på vanliga kundfrågor eller fakturahantering."></textarea><span class="err" id="e-vad"></span></div>
 </div>
+<input type="checkbox" name="botcheck" tabindex="-1" autocomplete="off" aria-hidden="true" style="display:none">
 <div class="form-actions">
 <button class="btn btn-green" type="submit" id="f-skicka">Skicka förfrågan</button>
 <span class="form-note">Uppgifterna används bara för att kontakta er.</span>
@@ -522,7 +523,8 @@ CASE slut -->
    Tom sträng = besökarens e-postprogram öppnas med meddelandet färdigt att skicka. */
 (function(){
   var MOTTAGARE='hej@auraai.se';
-  var FORM_ENDPOINT='';
+  var FORM_ENDPOINT='https://api.web3forms.com/submit';
+  var ACCESS_KEY='99344710-72c9-4b48-88b4-eaf1abe37953'; // Web3Forms – publik nyckel
   var form=document.getElementById('contactForm'), status=document.getElementById('f-status'), btn=document.getElementById('f-skicka');
   var checks={
     namn:function(v){return v.trim()?'':'Skriv ditt namn.';},
@@ -545,12 +547,13 @@ CASE slut -->
     var first=null;
     Object.keys(checks).forEach(function(n){ var m=checks[n](form.elements[n].value); setErr(n,m); if(m&&!first){first=form.elements[n];} });
     if(first){first.focus(); return;}
+    if(form.elements.botcheck.checked){return;}
     var d={}; Object.keys(checks).forEach(function(n){d[n]=form.elements[n].value.trim();});
     var subject='Kartläggning: '+d.foretag;
     var body='Namn: '+d.namn+'\nFöretag: '+d.foretag+'\nE-post: '+d.epost+'\nTelefon: '+(d.telefon||'–')+'\n\nVad vill ni automatisera?\n'+d.vad;
     if(FORM_ENDPOINT){
       btn.disabled=true; btn.textContent='Skickar…';
-      fetch(FORM_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({namn:d.namn,foretag:d.foretag,email:d.epost,telefon:d.telefon,meddelande:d.vad,_subject:subject})})
+      fetch(FORM_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({access_key:ACCESS_KEY,subject:subject,from_name:'Aura Ai – hemsidan',email:d.epost,'Namn':d.namn,'Företag':d.foretag,'E-post':d.epost,'Telefon':d.telefon||'–','Vad vill ni automatisera':d.vad,botcheck:form.elements.botcheck.checked})})
         .then(function(r){ if(!r.ok) throw new Error(); form.reset(); show('Tack, '+d.namn+'! Vi har fått din förfrågan och hör av oss inom en arbetsdag.'); })
         .catch(function(){ show('Förfrågan kunde inte skickas just nu. Mejla oss direkt på '+MOTTAGARE+'.'); })
         .then(function(){ btn.disabled=false; btn.textContent='Skicka förfrågan'; });
